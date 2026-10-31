@@ -415,25 +415,32 @@ jobs:
           echo "DETECTED_TITLE_ID=$DETECTED_ID" >> "$GITHUB_ENV"
  
       
+      
       - name: Update shader toolchain header
         shell: bash
         run: |
           set -euo pipefail
 
-          CHAIN_SCRIPT="$(
-            find . -name dmsh_chain.py -type f -print -quit
-          )"
+          CHAIN_SCRIPT="dm/gfx/tools/dmsh_chain.py"
 
-          if [[ -z "$CHAIN_SCRIPT" ]]; then
-            echo "::error::Could not find dmsh_chain.py"
+          echo "Current directory: $(pwd)"
+          echo "Using script: $CHAIN_SCRIPT"
+
+          if [[ ! -f "$CHAIN_SCRIPT" ]]; then
+            echo "::error::dmsh_chain.py not found at expected path."
+            find . -name dmsh_chain.py -type f
             exit 1
           fi
+
+          echo "Checking script version..."
+          head -n 12 "$CHAIN_SCRIPT"
 
           echo "Preparing shader toolchain for profile $DM_GAME"
 
           python "$CHAIN_SCRIPT" --header
 
           echo "Shader toolchain header generated successfully."
+
 
  
       - name: Build unsigned IPA
