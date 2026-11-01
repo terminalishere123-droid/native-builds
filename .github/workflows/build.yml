@@ -22,7 +22,7 @@ permissions:
  
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 360
  
     steps:
@@ -49,6 +49,46 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
+      
+      - name: Select Xcode 27.2 and install Metal Toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          XCODE_APP=""
+
+          for candidate in \
+            "/Applications/Xcode_27.2.app" \
+            "/Applications/Xcode_27.2_Release_Candidate.app"
+          do
+            if [[ -d "$candidate" ]]; then
+              XCODE_APP="$candidate"
+              break
+            fi
+          done
+
+          if [[ -z "$XCODE_APP" ]]; then
+            echo "::error::Xcode 27.2 not found on runner."
+            ls -la /Applications/
+            exit 1
+          fi
+
+          sudo xcode-select --switch "$XCODE_APP/Contents/Developer"
+
+          echo "DEVELOPER_DIR=$XCODE_APP/Contents/Developer" >> "$GITHUB_ENV"
+          export DEVELOPER_DIR="$XCODE_APP/Contents/Developer"
+
+          echo "Selected Xcode:"
+          xcodebuild -version
+
+          echo "Downloading Metal Toolchain..."
+          xcodebuild -downloadComponent MetalToolchain
+
+          echo "Verifying Metal compiler..."
+          xcrun -f metal
+
+          echo "Xcode and Metal setup completed."
+
  
       - name: Install dependencies
         shell: bash
